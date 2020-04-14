@@ -4,6 +4,8 @@
 
     #include <cassert>
 
+    #include <list>
+
     namespace buffer {
 
         struct flags {
@@ -21,19 +23,9 @@
 
             flags status;
 
-            header *next_free, *prev_free;
+            std::list<buffer::header>::iterator free_list_iterator;
 
-            inline header() : device_num(-1), block_num(-1), data(-1), status(),
-                              next_free(nullptr), prev_free(nullptr) {}
-
-            inline ~header() {
-                if (next_free != nullptr) {
-                    delete[] next_free;
-                }
-                if (prev_free != nullptr) {
-                    delete[] prev_free;
-                }
-            }
+            inline header() : device_num(-1), block_num(-1), data(-1), status(), free_list_iterator(nullptr) {}
 
         };
 
