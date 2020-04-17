@@ -1,37 +1,90 @@
 #ifndef _BUFFER_CACHE_
-	#define _BUFFER_CACHE_
-	#include <set>
-	#include "buffer.hpp"
-	#include "free_list.hpp"
-	
 
-	class buffer_cache {
-	private:
-		std::set<buffer::header,buffer::header_comparator> pool;
-		free_list fl;	
-	public:
-		inline buffer_cache(int size):fl(size) {}
+    #define _BUFFER_CACHE_
 
-		buffer::header add(int device_num, int block_num, int data) {
-			buffer::header buf = fl.remove(fl.head());
-			buf.device_num = device_num;
-			buf.block_num = block_num;
-			buf.data = data;
-			buf.status.locked = true;
-			buf.status.read_write = true;
-			pool.insert(buf);
-			return buf;
-		}
+    #include <cassert>
+    #include <set>
+    #include <random>
+    #include <thread>
 
-		void fl_add(buffer::header buf) {
-			buf.free_list_iterator = fl.add(buf);
-		}
+    #include "buffer.hpp"
+    #include "free_list.hpp"
 
-		std::set<buffer::header>::iterator search(int block_num) {
-			//way to look for a buffer with specific block_num
-		}
+    class buffer_cache {
 
+    private:
 
-	};
+        free_list fl;
+
+        std::set<buffer::header*, buffer::header_comparator> pool;
+        std::random_device rng;
+
+        inline buffer::header* search(int device_num, int block_num) {
+            assert(device_num >= 0 && block_num >= 0);
+            buffer::header *dummy = new buffer::header(device_num, block_num);
+            buffer::header *buf = nullptr;
+            std::set<buffer::header*>::iterator it = pool.find(dummy);
+            if (it != pool.end()) {
+                buf = *it;
+            }
+            delete[] dummy;
+            return buf;
+        }
+
+        inline int read_data_from_disk(int device_num, int block_num) {
+            int duration = 1000 + rng() % 3001;
+            std::this_thread::sleep_for(std::chrono::milliseconds(duration));
+            return (device_num ^ block_num);
+        }
+
+        inline void async_write(buffer::header* &buf) {
+            int duration = 1000 + rng() % 3001;
+            std::this_thread::sleep_for(std::chrono::milliseconds(duration));
+            (buf->status).delayed_write = false;
+            fl.insert_at_head(buf);
+        }
+
+    public:
+
+        inline buffer_cache(int size) : fl(size) {}
+
+        inline buffer::header* getblk(int device_num, int block_num) {
+            buffer::header *buf = nullptr;
+            do {
+                buf = search(device_num, block_num);
+                if (buf != nullptr) {
+                    if ((buf->status).locked) {
+                        // TODO: sleep (event buffer becomes free)
+                        buf = nullptr;
+                        continue;
+                    }
+                    (buf->status).locked = true;
+                    fl.remove(buf);
+                    return buf;
+                } else {
+                    if (fl.empty()) {
+                        // TODO: sleep (event any buffer becomes free)
+                        continue;
+                    }
+                    fl.remove(buf);
+                    if ((buf->status).delayed_write) {
+                        std::thread th(&buffer_cache::async_write, this, buf);
+                        buf = nullptr;
+                        continue;
+                    }
+                    (buf->status).locked = true;
+                    if (buf->device_num != -1 && buf->block_num != -1) {
+                        pool.erase(buf);
+                    }
+                    buf->device_num = device_num;
+                    buf->block_num = block_num;
+                    buf->data = read_data_from_disk(device_num, block_num);
+                    pool.insert(buf);
+                    return buf;
+                }
+            } while (buf == nullptr);
+        }
+
+    };
 
 #endif
