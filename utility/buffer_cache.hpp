@@ -39,7 +39,7 @@
             return (device_num ^ block_num);
         }
 
-        inline void async_write(buffer::header* &buf) {
+        inline void async_write(buffer::header *buf) {
             int duration = 1000 + rng() % 3001;
             std::this_thread::sleep_for(std::chrono::milliseconds(duration));
             (buf->status).delayed_write = false;
