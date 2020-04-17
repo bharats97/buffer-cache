@@ -72,6 +72,7 @@
                     fl.remove(buf);
                     if ((buf->status).delayed_write) {
                         std::thread th(&buffer_cache::async_write, this, buf);
+                        th.detach();
                         buf = nullptr;
                         continue;
                     }
