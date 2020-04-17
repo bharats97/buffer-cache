@@ -45,6 +45,7 @@
             assert(buf != nullptr);
             lst.push_front(buf);
             buf->free_list_iterator = lst.begin();
+            (buf->status).locked = false;
             mutex_lock.unlock();
         }
 
@@ -53,6 +54,7 @@
             assert(buf != nullptr);
             lst.push_back(buf);
             buf->free_list_iterator = std::prev(lst.end());
+            (buf->status).locked = false;
             mutex_lock.unlock();
         }
 
