@@ -3,35 +3,44 @@
     #define _BUFFER_HPP_
 
     #include <cassert>
-
     #include <list>
 
     namespace buffer {
 
-        struct flags {
+        class header {
 
-            bool locked, valid, delayed_write, read_write, in_demand;
+        private:
 
-            inline flags() : locked(false), valid(true), delayed_write(false),
-                             read_write(false), in_demand(false) {}
+            struct flags {
 
-        };
+                bool locked, valid, delayed_write, read_write, in_demand;
 
-        struct header {
+                inline flags() : locked(false), valid(true), delayed_write(false),
+                                 read_write(false), in_demand(false) {}
+
+            };
+
+        public:
 
             int device_num, block_num, data;
 
             flags status;
 
-            std::list<buffer::header>::iterator free_list_iterator;
+            std::list<header*>::iterator free_list_iterator;
 
-            inline header() : device_num(-1), block_num(-1), data(-1), status(), free_list_iterator(nullptr) {}
+            inline header() : device_num(-1), block_num(-1), data(-1),
+                              status(), free_list_iterator(nullptr) {}
+
+            inline header(int _device_num, int _block_num) : header() {
+                device_num = _device_num;
+                block_num = _block_num;
+            }
 
         };
 
         struct header_comparator {
 
-            inline bool operator () (const header *x, const header *y) {
+            inline bool operator () (const header* &x, const header* &y) {
                 assert(x != nullptr && y != nullptr);
                 if (x->device_num == y->device_num) {
                     return (x->block_num < y->block_num);
