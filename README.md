@@ -30,7 +30,7 @@ mkdir work_in_progress/
 ### How will we compile code?
 
 ```bash
-g++ -no-pie -fno-pie -std=gnu++17 -O3 -Wall -Wextra -Wpedantic -D LOCAL -g -o ExecutableName FileName
+g++ -no-pie -fno-pie -std=gnu++17 -O3 -pthread -Wall -Wextra -Wpedantic -D LOCAL -g -o ExecutableName FileName
 ```
 where we'll try to keep the _ExecutableName_ and _FileName_ (before extension) same, and try to keep it logical (or follow some good convention or structure).
 
