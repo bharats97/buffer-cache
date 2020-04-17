@@ -13,10 +13,11 @@
 
             struct flags {
 
-                bool locked, valid, delayed_write, read_write, in_demand;
+                bool locked, valid, delayed_write, read_write, in_demand, old;
 
-                inline flags() : locked(false), valid(true), delayed_write(false),
-                                 read_write(false), in_demand(false) {}
+                inline flags() : locked(false), valid(true),
+                                 delayed_write(false), read_write(false),
+                                 in_demand(false), old(false) {}
 
             };
 

@@ -3,8 +3,9 @@
     #define _BUFFER_CACHE_
 
     #include <cassert>
-    #include <set>
+    #include <mutex>
     #include <random>
+    #include <set>
     #include <thread>
 
     #include "buffer.hpp"
@@ -16,8 +17,9 @@
 
         free_list fl;
 
-        std::set<buffer::header*, buffer::header_comparator> pool;
+        std::mutex mutex_lock;
         std::random_device rng;
+        std::set<buffer::header*, buffer::header_comparator> pool;
 
         inline buffer::header* search(int device_num, int block_num) {
             assert(device_num >= 0 && block_num >= 0);
@@ -41,7 +43,8 @@
             int duration = 1000 + rng() % 3001;
             std::this_thread::sleep_for(std::chrono::milliseconds(duration));
             (buf->status).delayed_write = false;
-            fl.insert_at_head(buf);
+            (buf->status).old = true;
+            brelse(buf);
         }
 
     public:
@@ -83,6 +86,18 @@
                     return buf;
                 }
             } while (buf == nullptr);
+        }
+
+        inline void brelse(buffer::header* &buf) {
+            // TODO: event wake up for specific and any buffer
+            mutex_lock.lock();
+            if ((buf->status).valid && !(buf->status).old) {
+                fl.insert_at_tail(buf);
+            } else {
+                (buf->status).old = false;
+                fl.insert_at_head(buf);
+            }
+            mutex_lock.unlock();
         }
 
     };
