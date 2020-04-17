@@ -41,7 +41,7 @@
 
         struct header_comparator {
 
-            inline bool operator () (const header* &x, const header* &y) {
+            inline bool operator () (const header* const &x, const header* const &y) {
                 assert(x != nullptr && y != nullptr);
                 if (x->device_num == y->device_num) {
                     return (x->block_num < y->block_num);
