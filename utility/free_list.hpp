@@ -1,41 +1,75 @@
 #ifndef _FREE_LIST_HPP_
 
     #define _FREE_LIST_HPP_
-    
-    #include <list>
-    
+
     #include <cassert>
+    #include <iterator>
+    #include <list>
+    #include <mutex>
 
     #include "buffer.hpp"
-    
-    struct free_list {
-        
-        std::list<buffer::header> lst;
 
-        long unsigned int capacity;
-        
-        inline free_list (int n) : capacity(n){}
+    class free_list {
 
-        inline std::list<buffer::header>::iterator head () {
-        	assert(!lst.empty());
-        	return lst.begin ();
+    private:
+
+        unsigned int capacity;
+
+        std::list<buffer::header*> lst;
+        std::mutex mutex_lock;
+
+        inline void clear_iterator(std::list<buffer::header*>::iterator &it) {
+            it = std::list<buffer::header*>::iterator(nullptr);
         }
 
-        std::list<buffer::header>::iterator add(buffer::header buf) {
-        	assert((lst.size() != capacity) && !buf.status.locked);
-        	lst.push_back(buf);
-        	buf.status.locked = false;
-        	std::list<buffer::header>::iterator it = lst.end();
-        	it--;
-        	return it;
+    public:
+
+        inline free_list(int n) {
+            assert(n > 0);
+            capacity = n;
+            for (unsigned int i = 0; i < capacity; i++) {
+                lst.push_back(new buffer::header());
+                lst.back()->free_list_iterator = std::prev(lst.end());
+            }
         }
 
-        buffer::header remove(std::list<buffer::header>::iterator it) {
-        	buffer::header buf = *it;
-        	lst.erase(it);
-        	return buf;
+        inline ~free_list() {
+            for (buffer::header* &buf : lst) {
+                delete[] buf;
+                buf = nullptr;
+            }
         }
-        
+
+        inline void insert_at_head(buffer::header* &buf) {
+            mutex_lock.lock();
+            assert(buf != nullptr);
+            lst.push_front(buf);
+            buf->free_list_iterator = lst.begin();
+            mutex_lock.unlock();
+        }
+
+        inline void insert_at_tail(buffer::header* &buf) {
+            mutex_lock.lock();
+            assert(buf != nullptr);
+            lst.push_back(buf);
+            buf->free_list_iterator = std::prev(lst.end());
+            mutex_lock.unlock();
+        }
+
+        inline void remove(buffer::header* &buf) {
+            mutex_lock.lock();
+            if (buf == nullptr) {
+                buf = lst.front();
+            }
+            lst.erase(buf->free_list_iterator);
+            clear_iterator(buf->free_list_iterator);
+            mutex_lock.unlock();
+        }
+
+        inline bool empty() {
+            return lst.empty();
+        }
+
     };
 
 #endif
