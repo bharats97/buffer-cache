@@ -6,7 +6,6 @@
     #include <iterator>
     #include <list>
     #include <mutex>
-
     #include "buffer.hpp"
 
     class free_list {
@@ -72,6 +71,21 @@
             return lst.empty();
         }
 
+        inline friend std::ostream & operator << (std::ostream &output, const free_list &fl) {
+            int i = 1;
+            output << "\nSNO."; 
+            output << std::setw(10) << "DEVICE" ;
+            output << std::setw(9) << "BLOCK" ;
+            output << std::setw(15) << "LOCKED/FREE" ; 
+            output << std::setw(17) << "DELAYED WRITE";
+            for (auto buf : fl.lst) {
+                output << "\n" << i<<". ";
+                output << *buf;
+                i++;
+            }
+            output << "\n";
+            return output;
+        }
     };
 
 #endif

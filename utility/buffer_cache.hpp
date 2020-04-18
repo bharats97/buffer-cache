@@ -7,7 +7,6 @@
     #include <random>
     #include <set>
     #include <thread>
-
     #include "buffer.hpp"
     #include "free_list.hpp"
 
@@ -72,7 +71,7 @@
                     fl.remove(buf);
                     if ((buf->status).delayed_write) {
                         std::thread th(&buffer_cache::async_write, this, buf);
-                        th.detach();
+                        th.join();
                         buf = nullptr;
                         continue;
                     }
@@ -87,6 +86,7 @@
                     return buf;
                 }
             } while (buf == nullptr);
+            return buf;
         }
 
         inline void brelse(buffer::header* &buf) {
@@ -101,6 +101,22 @@
             mutex_lock.unlock();
         }
 
+        inline friend std::ostream & operator << (std::ostream &output, const buffer_cache &bc) {
+            int i = 1;
+            output << "\nBuffer Pool :";
+            output << "\nSNO."; 
+            output << std::setw(10) << "DEVICE" ;
+            output << std::setw(9) << "BLOCK" ;
+            output << std::setw(15) << "LOCKED/FREE" ; 
+            output << std::setw(17) << "DELAYED WRITE";
+            for (auto buf : bc.pool) {
+                output << "\n" <<i<<".   ";
+                output << *buf;
+                i++;
+            }
+            output << "\nFree List : " << bc.fl;
+            return output;
+        }
     };
 
 #endif

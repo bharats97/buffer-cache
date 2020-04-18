@@ -4,6 +4,8 @@
 
     #include <cassert>
     #include <list>
+    #include <ostream>
+    #include <iomanip>
 
     namespace buffer {
 
@@ -35,6 +37,15 @@
             inline header(int _device_num, int _block_num) : header() {
                 device_num = _device_num;
                 block_num = _block_num;
+            }
+
+            inline friend std::ostream & operator << (std::ostream &output, const header &buf) {
+                output << std::setw(8) << buf.device_num; 
+                output << std::setw(10) << buf.block_num;
+                output << std::setw(14) << (buf.status.locked ? " Locked" : " Free");
+                output << std::setw(12) << (buf.status.delayed_write ? " DW" : "");
+                output << "\n";
+                return output;
             }
 
         };
