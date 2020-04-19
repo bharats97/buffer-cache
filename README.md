@@ -34,6 +34,18 @@ g++ -no-pie -fno-pie -std=gnu++14 -O3 -pthread -Wall -Wextra -Wpedantic -D LOCAL
 ```
 where we'll try to keep the _ExecutableName_ and _FileName_ (before extension) same, and try to keep it logical (or follow some good convention or structure).
 
+### How to push code to GitHub?
+
+For maintainers only:
+
+```bash
+git status
+git add ./
+git pull
+git commit -m 'commit message'
+git push
+```
+
 ### Points to Remember
 
 - ```tasks.txt``` and ```work_in_progress/``` are mentioned in ```.gitignore``` and hence won't be staged for commits. So any notes you want to make should be in the file ```tasks.txt``` and any code/work that you're doing and is not finalized should reside in the directory ```work_in_progress/```.
