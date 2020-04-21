@@ -6,13 +6,13 @@
     #include <iterator>
     #include <list>
     #include <mutex>
+    #include <ostream>
+
     #include "buffer.hpp"
 
     class free_list {
 
     private:
-
-        unsigned int capacity;
 
         std::list<buffer::header*> lst;
         std::mutex mutex_lock;
@@ -25,8 +25,7 @@
 
         inline free_list(int n) {
             assert(n > 0);
-            capacity = n;
-            for (unsigned int i = 0; i < capacity; i++) {
+            for (int i = 0; i < n; i++) {
                 lst.push_back(new buffer::header());
                 lst.back()->free_list_iterator = std::prev(lst.end());
             }
@@ -71,21 +70,22 @@
             return lst.empty();
         }
 
-        inline friend std::ostream & operator << (std::ostream &output, const free_list &fl) {
+        inline friend std::ostream& operator << (std::ostream &out, const free_list &fl) {
+            out << std::endl << "SNO.";
+            out << std::setw(10) << "DEVICE";
+            out << std::setw(9) << "BLOCK";
+            out << std::setw(15) << "LOCKED/FREE";
+            out << std::setw(17) << "DELAYED WRITE";
             int i = 1;
-            output << "\nSNO."; 
-            output << std::setw(10) << "DEVICE" ;
-            output << std::setw(9) << "BLOCK" ;
-            output << std::setw(15) << "LOCKED/FREE" ; 
-            output << std::setw(17) << "DELAYED WRITE";
-            for (auto buf : fl.lst) {
-                output << "\n" << i<<". ";
-                output << *buf;
+            for (const buffer::header* const &buf : fl.lst) {
+                out << std::endl << i << ". ";
+                out << *buf;
                 i++;
             }
-            output << "\n";
-            return output;
+            out << std::endl;
+            return out;
         }
+
     };
 
 #endif

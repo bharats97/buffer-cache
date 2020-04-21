@@ -3,9 +3,9 @@
     #define _BUFFER_HPP_
 
     #include <cassert>
+    #include <iomanip>
     #include <list>
     #include <ostream>
-    #include <iomanip>
 
     namespace buffer {
 
@@ -39,13 +39,13 @@
                 block_num = _block_num;
             }
 
-            inline friend std::ostream & operator << (std::ostream &output, const header &buf) {
-                output << std::setw(8) << buf.device_num; 
-                output << std::setw(10) << buf.block_num;
-                output << std::setw(14) << (buf.status.locked ? " Locked" : " Free");
-                output << std::setw(12) << (buf.status.delayed_write ? " DW" : "");
-                output << "\n";
-                return output;
+            inline friend std::ostream& operator << (std::ostream &out, const header &buf) {
+                out << std::setw(8) << buf.device_num;
+                out << std::setw(10) << buf.block_num;
+                out << std::setw(14) << (buf.status.locked ? " Locked" : " Free");
+                out << std::setw(12) << (buf.status.delayed_write ? " DW" : "");
+                out << std::endl;
+                return out;
             }
 
         };
