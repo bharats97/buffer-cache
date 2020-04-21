@@ -23,11 +23,11 @@ int main()
   	else
     	std::cout<<"Couldn't open the directory"<<std::endl;
 
-	std::thread t1(process,&cache,i-2);
+	std::thread t1(process,&cache,i-3);
 	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-	std::thread t2(process,&cache,i-1);
+	std::thread t2(process,&cache,i-2);
 	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-	std::thread t3(process,&cache,i);
+	std::thread t3(process,&cache,i-1);
 
 	t1.join();
 	t2.join();
