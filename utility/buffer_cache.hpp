@@ -13,16 +13,37 @@
     #include "buffer.hpp"
     #include "free_list.hpp"
 
+    // The Buffer Cache Class
     class buffer_cache {
 
     private:
+
+        // Data Members: free list, buffer pool, mutex lock for critical
+        // sections, and a random number generator
 
         free_list fl;
 
         std::mutex mutex_lock;
         std::random_device rng;
+
+        /*
+         * This is the key change that we've done here. We do not maintain a
+         * Buffer Hash Array, instead we've used a Balanced Binary Search Tree
+         * for fast searching purposes. Complete mathematical analysis about
+         * speed and performance boost up, trade offs, etc. have been provided
+         * along with this project in a separate PDF file.
+         *
+         * We've used a reliable data structure from GNU C++ STL. It is 'std::set',
+         * which is an implicitly defined RB-Tree (Balanced BST) which keeps
+         * unique elements, and keeps them sorted at all times, so all
+         * operations work in logarithmic time complexity
+         * (in terms of current size of buffer pool).
+         */
         std::set<buffer::header*, buffer::header_comparator> pool;
 
+        // Searches a buffer in buffer pool, returns buffer pointer if found,
+        // else return 'nullptr'
+        // Work in O(log2(pool_size))
         inline buffer::header* search(int device_num, int block_num) {
             assert(device_num >= 0 && block_num >= 0);
             buffer::header *dummy = new buffer::header(device_num, block_num);
@@ -35,12 +56,15 @@
             return buf;
         }
 
+        // Dummy method to read data from disk (just to show).
         inline int read_data_from_disk(int device_num, int block_num) {
             int duration = 1000 + rng() % 3001;
             std::this_thread::sleep_for(std::chrono::milliseconds(duration));
             return (device_num ^ block_num);
         }
 
+        // Asynchronous write to disk, for buffers marked with
+        // delayed_write flag.
         inline void async_write(buffer::header *buf) {
             int duration = 1000 + rng() % 3001;
             std::this_thread::sleep_for(std::chrono::milliseconds(duration));
@@ -51,8 +75,12 @@
 
     public:
 
+        // Constructor
         inline buffer_cache(int size) : fl(size) {}
 
+        // The 'getblk' algorithm, each loop iteration works in O(log2(pool_size)),
+        // as compared to the traditional time complexity which is O(pool_size) per
+        // iteration.
         inline buffer::header* getblk(int device_num, int block_num, std::ostream &out) {
             buffer::header *buf = nullptr;
             do {
@@ -108,6 +136,7 @@
             return buf;
         }
 
+        // The Buffer Release algorithm 'brelse'
         inline void brelse(buffer::header* &buf) {
             mutex_lock.lock();
             if ((buf->status).valid && !(buf->status).old) {
@@ -119,6 +148,7 @@
             mutex_lock.unlock();
         }
 
+        // Output Stream operator overloaded for printing and debugging
         inline friend std::ostream& operator << (std::ostream &out, const buffer_cache &bc) {
             out << std::endl << "Buffer Pool :";
             out << std::endl << "SNO.";

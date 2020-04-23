@@ -14,15 +14,18 @@
 
     private:
 
+        // Data members: Free list, mutex lock for critical section
         std::list<buffer::header*> lst;
         std::mutex mutex_lock;
 
+        // Private method for clearing a buffer::header free list iterator
         inline void clear_iterator(std::list<buffer::header*>::iterator &it) {
             it = std::list<buffer::header*>::iterator(nullptr);
         }
 
     public:
 
+        // Constructor, initializes the system with 'n' free buffers (on boot)
         inline free_list(int n) {
             assert(n > 0);
             for (int i = 0; i < n; i++) {
@@ -31,6 +34,7 @@
             }
         }
 
+        // Destructor, deallocates memory safely on system shut down
         inline ~free_list() {
             for (buffer::header* &buf : lst) {
                 delete[] buf;
@@ -38,6 +42,7 @@
             }
         }
 
+        // Insert at head of free list, this is a critical section
         inline void insert_at_head(buffer::header* &buf) {
             mutex_lock.lock();
             assert(buf != nullptr);
@@ -47,6 +52,7 @@
             mutex_lock.unlock();
         }
 
+        // Insert at tail of free list, this is a critical section
         inline void insert_at_tail(buffer::header* &buf) {
             mutex_lock.lock();
             assert(buf != nullptr);
@@ -56,6 +62,7 @@
             mutex_lock.unlock();
         }
 
+        // Remove a specific buffer from free list (critical section)
         inline void remove(buffer::header* &buf) {
             mutex_lock.lock();
             if (buf == nullptr) {
@@ -66,10 +73,12 @@
             mutex_lock.unlock();
         }
 
+        // Return 'true' if free list is empty
         inline bool empty() {
             return lst.empty();
         }
 
+        // Output Stream operator overloaded for printing and debugging
         inline friend std::ostream& operator << (std::ostream &out, const free_list &fl) {
             out << std::endl << "SNO.";
             out << std::setw(10) << "DEVICE";
